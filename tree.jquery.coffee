@@ -438,11 +438,11 @@ class JqTreeWidget extends MouseWidget
         dataUrl: null
 
     toggle: (node) ->
-        if node.hasChildren()
-            new FolderElement(node, this).toggle()
+        if node.is_open
+            @closeNode(node)
+        else
+            @openNode(node)
 
-        @_saveState()
-    
     getTree: ->
         return @tree
 
@@ -480,10 +480,20 @@ class JqTreeWidget extends MouseWidget
         return @tree.getNodeByName(name)
 
     openNode: (node, skip_slide) ->
-        if node.hasChildren()
-            new FolderElement(node, this).open(null, skip_slide)
+        if not node.hasChildren()
+            return
 
+        doOpen = =>
+            new FolderElement(node, this).open(null, skip_slide)
             @_saveState()
+
+        event = @_triggerEvent(
+            'tree.before_open',
+            node: node
+            do_open: doOpen
+        )
+        if not event.isDefaultPrevented()
+            doOpen()
 
     closeNode: (node, skip_slide) ->
         if node.hasChildren()
@@ -707,14 +717,12 @@ class JqTreeWidget extends MouseWidget
         $target = $(e.target)
 
         if $target.is('.jqtree-toggler')
-            node_element = @_getNodeElement($target)
-            if node_element and node_element.node.hasChildren()
-                node_element.toggle()
-
-                @_saveState()
-
+            node = @_getNode($target)
+            if node and node.hasChildren()
                 e.preventDefault()
                 e.stopPropagation()
+
+                @toggle(node)
         else if $target.is('div') or $target.is('span')
             node = @_getNode($target)
             if node
@@ -890,29 +898,25 @@ class NodeElement
 
 
 class FolderElement extends NodeElement
-    toggle: ->
-        if @node.is_open
-            @close()
-        else
-            @open()
-
     open: (on_finished, skip_slide) ->
-        if not @node.is_open
-            @node.is_open = true
-            @getButton().removeClass('jqtree-closed')
+        if @node.is_open
+            return
 
-            doOpen = =>
-                @getLi().removeClass('jqtree-closed')
-                if on_finished
-                    on_finished()
+        @node.is_open = true
+        @getButton().removeClass('jqtree-closed')
 
-                @tree_widget._triggerEvent('tree.open', node: @node)
+        finishOpen = =>
+            @getLi().removeClass('jqtree-closed')
+            if on_finished
+                on_finished()
 
-            if skip_slide
-                @getUl().show()
-                doOpen()
-            else
-                @getUl().slideDown('fast', doOpen)
+            @tree_widget._triggerEvent('tree.open', node: @node)
+
+        if skip_slide
+            @getUl().show()
+            finishOpen()
+        else
+            @getUl().slideDown('fast', finishOpen)
 
     close: (skip_slide) ->
         if @node.is_open
@@ -1302,7 +1306,7 @@ class DragAndDropHandler
 
         iterate = (node, next_node) =>
             must_iterate_inside = (
-                (node.is_open or  not node.element) and node.hasChildren()
+                (node.is_open or not node.element) and node.hasChildren()
             )
 
             if node.element

@@ -733,10 +733,11 @@ limitations under the License.
     };
 
     JqTreeWidget.prototype.toggle = function(node) {
-      if (node.hasChildren()) {
-        new FolderElement(node, this).toggle();
+      if (node.is_open) {
+        return this.closeNode(node);
+      } else {
+        return this.openNode(node);
       }
-      return this._saveState();
     };
 
     JqTreeWidget.prototype.getTree = function() {
@@ -784,9 +785,21 @@ limitations under the License.
     };
 
     JqTreeWidget.prototype.openNode = function(node, skip_slide) {
-      if (node.hasChildren()) {
-        new FolderElement(node, this).open(null, skip_slide);
-        return this._saveState();
+      var doOpen, event,
+        _this = this;
+      if (!node.hasChildren()) {
+        return;
+      }
+      doOpen = function() {
+        new FolderElement(node, _this).open(null, skip_slide);
+        return _this._saveState();
+      };
+      event = this._triggerEvent('tree.before_open', {
+        node: node,
+        do_open: doOpen
+      });
+      if (!event.isDefaultPrevented()) {
+        return doOpen();
       }
     };
 
@@ -1027,18 +1040,17 @@ limitations under the License.
     };
 
     JqTreeWidget.prototype._click = function(e) {
-      var $target, node, node_element;
+      var $target, node;
       if (e.ctrlKey) {
         return;
       }
       $target = $(e.target);
       if ($target.is('.jqtree-toggler')) {
-        node_element = this._getNodeElement($target);
-        if (node_element && node_element.node.hasChildren()) {
-          node_element.toggle();
-          this._saveState();
+        node = this._getNode($target);
+        if (node && node.hasChildren()) {
           e.preventDefault();
-          return e.stopPropagation();
+          e.stopPropagation();
+          return this.toggle(node);
         }
       } else if ($target.is('div') || $target.is('span')) {
         node = this._getNode($target);
@@ -1279,35 +1291,28 @@ limitations under the License.
       return FolderElement.__super__.constructor.apply(this, arguments);
     }
 
-    FolderElement.prototype.toggle = function() {
-      if (this.node.is_open) {
-        return this.close();
-      } else {
-        return this.open();
-      }
-    };
-
     FolderElement.prototype.open = function(on_finished, skip_slide) {
-      var doOpen,
+      var finishOpen,
         _this = this;
-      if (!this.node.is_open) {
-        this.node.is_open = true;
-        this.getButton().removeClass('jqtree-closed');
-        doOpen = function() {
-          _this.getLi().removeClass('jqtree-closed');
-          if (on_finished) {
-            on_finished();
-          }
-          return _this.tree_widget._triggerEvent('tree.open', {
-            node: _this.node
-          });
-        };
-        if (skip_slide) {
-          this.getUl().show();
-          return doOpen();
-        } else {
-          return this.getUl().slideDown('fast', doOpen);
+      if (this.node.is_open) {
+        return;
+      }
+      this.node.is_open = true;
+      this.getButton().removeClass('jqtree-closed');
+      finishOpen = function() {
+        _this.getLi().removeClass('jqtree-closed');
+        if (on_finished) {
+          on_finished();
         }
+        return _this.tree_widget._triggerEvent('tree.open', {
+          node: _this.node
+        });
+      };
+      if (skip_slide) {
+        this.getUl().show();
+        return finishOpen();
+      } else {
+        return this.getUl().slideDown('fast', finishOpen);
       }
     };
 

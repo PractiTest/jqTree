@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Example 5</title>
+    <link rel="stylesheet" href="../extra/css/gridless.css">
+    <link rel="stylesheet" href="example.css">
+    <link rel="stylesheet" href="../extra/syntax_highlighter/shCore.css">
+    <link rel="stylesheet" href="../extra/syntax_highlighter/shThemeDefault.css">
+    <link rel="stylesheet" href="../extra/syntax_highlighter/shThemeRDark.css">
+    <link rel="stylesheet" href="../jqtree.css">
+    <script src="../extra/js/jquery-1.7.2.min.js"></script>
+    <script src="../tree.jquery.js"></script>
+    <script src="../extra/syntax_highlighter/XRegExp.js"></script>
+    <script src="../extra/syntax_highlighter/shCore.js"></script>
+    <script src="../extra/syntax_highlighter/shBrushJScript.js"></script>
+    <script src="example.js"></script>
+</head>
+<body>
+    <p id="nav">
+        <a href="example4.html">&laquo; Example 4</a>
+    </p>
+
+    <h1>Example 5 - Load on demand</h1>
+
+    <div id="tree1"></div>
+
+    <script>
+        $(function() {
+            var data = [
+                {
+                    label: 'node1',
+                    children: [
+                        { ghost: true }
+                    ]
+                },
+                {
+                    label: 'node2',
+                    children: [
+                        { ghost: true }
+                    ]
+                },
+                {
+                    label: 'node3',
+                    children: [
+                        { ghost: true }
+                    ]
+                },
+            ];
+
+            var $tree = $('#tree1');
+            $tree.tree({
+                data: data
+            });
+            $tree.bind('tree.before_open', function(e) {
+                var node = e.node;
+                var child = node.children[0];
+
+                if (child.ghost) {
+                    $tree.tree('removeNode', child);
+                    $tree.tree('loadData', ['aaa', 'bbb', 'ccc'], node);
+                }
+            }); 
+        });
+    </script>
+</body>
+</html>
