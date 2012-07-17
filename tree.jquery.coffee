@@ -255,6 +255,9 @@ class Node
     hasChildren: ->
         return @children.length != 0
 
+    isFolder: ->
+        return @hasChildren() or @is_folder
+
     ###
     Iterate over all the nodes in the tree.
 
@@ -480,7 +483,7 @@ class JqTreeWidget extends MouseWidget
         return @tree.getNodeByName(name)
 
     openNode: (node, skip_slide) ->
-        if not node.hasChildren()
+        if not node.isFolder()
             return
 
         doOpen = =>
@@ -496,7 +499,7 @@ class JqTreeWidget extends MouseWidget
             doOpen()
 
     closeNode: (node, skip_slide) ->
-        if node.hasChildren()
+        if node.isFolder()
             new FolderElement(node, this).close(skip_slide)
 
             @_saveState()
@@ -533,7 +536,7 @@ class JqTreeWidget extends MouseWidget
             parent_node = @tree
 
         # Is the parent already a root node?
-        is_already_root_node = parent_node.hasChildren()
+        is_already_root_node = parent_node.isFolder()
 
         node = parent_node.append(new_node_info)
 
@@ -640,7 +643,7 @@ class JqTreeWidget extends MouseWidget
             return $("<ul#{ class_string }></ul>")
 
         createLi = (node) =>
-            if node.hasChildren()
+            if node.isFolder()
                 $li = createFolderLi(node)
             else
                 $li = createNodeLi(node)
@@ -718,7 +721,7 @@ class JqTreeWidget extends MouseWidget
 
         if $target.is('.jqtree-toggler')
             node = @_getNode($target)
-            if node and node.hasChildren()
+            if node and node.isFolder()
                 e.preventDefault()
                 e.stopPropagation()
 
@@ -741,7 +744,7 @@ class JqTreeWidget extends MouseWidget
             return $li.data('node')
 
     _getNodeElementForNode: (node) ->
-        if node.hasChildren()
+        if node.isFolder()
             return new FolderElement(node, this)
         else
             return new NodeElement(node, this)
@@ -827,7 +830,7 @@ class GhostDropHint
         else if position == Position.BEFORE
             @moveBefore()
         else if position == Position.INSIDE
-            if node.hasChildren() and node.is_open
+            if node.isFolder() and node.is_open
                 @moveInsideOpenFolder()
             else
                 @moveInside()
@@ -1375,7 +1378,7 @@ class DragAndDropHandler
         # if this is a closed folder, start timer to open it
         node = @hovered_area.node
         if (
-            node.hasChildren() and
+            node.isFolder() and
             not node.is_open and
             @hovered_area.position == Position.INSIDE
         )

@@ -505,6 +505,10 @@ limitations under the License.
       return this.children.length !== 0;
     };
 
+    Node.prototype.isFolder = function() {
+      return this.hasChildren() || this.is_folder;
+    };
+
     /*
         Iterate over all the nodes in the tree.
     
@@ -787,7 +791,7 @@ limitations under the License.
     JqTreeWidget.prototype.openNode = function(node, skip_slide) {
       var doOpen, event,
         _this = this;
-      if (!node.hasChildren()) {
+      if (!node.isFolder()) {
         return;
       }
       doOpen = function() {
@@ -804,7 +808,7 @@ limitations under the License.
     };
 
     JqTreeWidget.prototype.closeNode = function(node, skip_slide) {
-      if (node.hasChildren()) {
+      if (node.isFolder()) {
         new FolderElement(node, this).close(skip_slide);
         return this._saveState();
       }
@@ -853,7 +857,7 @@ limitations under the License.
       if (!parent_node) {
         parent_node = this.tree;
       }
-      is_already_root_node = parent_node.hasChildren();
+      is_already_root_node = parent_node.isFolder();
       node = parent_node.append(new_node_info);
       if (is_already_root_node) {
         this._refreshElements(parent_node);
@@ -970,7 +974,7 @@ limitations under the License.
       };
       createLi = function(node) {
         var $li;
-        if (node.hasChildren()) {
+        if (node.isFolder()) {
           $li = createFolderLi(node);
         } else {
           $li = createNodeLi(node);
@@ -1047,7 +1051,7 @@ limitations under the License.
       $target = $(e.target);
       if ($target.is('.jqtree-toggler')) {
         node = this._getNode($target);
-        if (node && node.hasChildren()) {
+        if (node && node.isFolder()) {
           e.preventDefault();
           e.stopPropagation();
           return this.toggle(node);
@@ -1076,7 +1080,7 @@ limitations under the License.
     };
 
     JqTreeWidget.prototype._getNodeElementForNode = function(node) {
-      if (node.hasChildren()) {
+      if (node.isFolder()) {
         return new FolderElement(node, this);
       } else {
         return new NodeElement(node, this);
@@ -1184,7 +1188,7 @@ limitations under the License.
       } else if (position === Position.BEFORE) {
         this.moveBefore();
       } else if (position === Position.INSIDE) {
-        if (node.hasChildren() && node.is_open) {
+        if (node.isFolder() && node.is_open) {
           this.moveInsideOpenFolder();
         } else {
           this.moveInside();
@@ -1788,7 +1792,7 @@ limitations under the License.
         return;
       }
       node = this.hovered_area.node;
-      if (node.hasChildren() && !node.is_open && this.hovered_area.position === Position.INSIDE) {
+      if (node.isFolder() && !node.is_open && this.hovered_area.position === Position.INSIDE) {
         this.startOpenFolderTimer(node);
       }
       this.removeDropHint();

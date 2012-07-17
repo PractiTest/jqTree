@@ -30,22 +30,16 @@
             var data = [
                 {
                     label: 'node1',
-                    children: [
-                        { ghost: true }
-                    ]
+                    is_folder: true
                 },
                 {
                     label: 'node2',
-                    children: [
-                        { ghost: true }
-                    ]
+                    is_folder: true
                 },
                 {
                     label: 'node3',
-                    children: [
-                        { ghost: true }
-                    ]
-                },
+                    is_folder: true
+                }
             ];
 
             var $tree = $('#tree1');
@@ -54,10 +48,8 @@
             });
             $tree.bind('tree.before_open', function(e) {
                 var node = e.node;
-                var child = node.children[0];
 
-                if (child.ghost) {
-                    $tree.tree('removeNode', child);
+                if (! node.hasChildren()) {
                     $tree.tree('loadData', ['aaa', 'bbb', 'ccc'], node);
                 }
             }); 
