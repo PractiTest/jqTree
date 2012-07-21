@@ -23,67 +23,45 @@
     </p>
 
     <h1>Example 5 - Load on demand</h1>
+
+    <div id="tree1"></div>
+
     <p>
         This examples loads data on demand in the <strong>tree.before_open</strong> event.
     </p>
 
-    <div id="tree1"></div>
+    <h3>html</h3>
+<pre>
+&lt;div id="tree1"&gt;&lt;/div&gt;
+</pre>
+
+    <h3>javascript</h3>
+<pre>
+var $tree = $('#tree1');
+$tree.tree({
+    data: ExampleData.getFirstLevelData()
+});
+$tree.bind('tree.before_open', function(e) {
+    var node = e.node;
+
+    if (! node.hasChildren()) {
+        var data = ExampleData.getChildrenOfNode(node.id);
+        $tree.tree('loadData', data, node);
+    }
+});
+</pre>
 
     <script>
-        function getFirstLevelData(nodes) {
-            var data = [];
-
-            $.each(nodes, function() {
-                var node = {
-                    label: this.label,
-                    id: this.id,
-                };
-
-                if (this.children) {
-                    node.is_folder = true;
-                }
-
-                data.push(node);
-            });
-
-            return data;
-        }
-
-        function getChildrenOfNode(node_id) {
-            var result = null;
-
-            function iterate(nodes) {
-                $.each(nodes, function() {
-                    if (result) {
-                        return;
-                    }
-                    else {
-                        if (this.id == node_id) {
-                            result = this;
-                        }
-
-                        if (this.children) {
-                            iterate(this.children);
-                        }
-                    }
-                });
-            }
-
-            iterate(example_data);
-
-            return getFirstLevelData(result.children);
-        }
-
         $(function() {
             var $tree = $('#tree1');
             $tree.tree({
-                data: getFirstLevelData(example_data)
+                data: ExampleData.getFirstLevelData()
             });
             $tree.bind('tree.before_open', function(e) {
                 var node = e.node;
 
                 if (! node.hasChildren()) {
-                    var data = getChildrenOfNode(node.id);
+                    var data = ExampleData.getChildrenOfNode(node.id);
                     $tree.tree('loadData', data, node);
                 }
             }); 
