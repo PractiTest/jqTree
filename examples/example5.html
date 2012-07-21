@@ -14,6 +14,7 @@
     <script src="../extra/syntax_highlighter/XRegExp.js"></script>
     <script src="../extra/syntax_highlighter/shCore.js"></script>
     <script src="../extra/syntax_highlighter/shBrushJScript.js"></script>
+    <script src="../extra/example_data.js"></script>
     <script src="example.js"></script>
 </head>
 <body>
@@ -22,35 +23,68 @@
     </p>
 
     <h1>Example 5 - Load on demand</h1>
+    <p>
+        This examples loads data on demand in the <strong>tree.before_open</strong> event.
+    </p>
 
     <div id="tree1"></div>
 
     <script>
-        $(function() {
-            var data = [
-                {
-                    label: 'node1',
-                    is_folder: true
-                },
-                {
-                    label: 'node2',
-                    is_folder: true
-                },
-                {
-                    label: 'node3',
-                    is_folder: true
-                }
-            ];
+        function getFirstLevelData(nodes) {
+            var data = [];
 
+            $.each(nodes, function() {
+                var node = {
+                    label: this.label,
+                    id: this.id,
+                };
+
+                if (this.children) {
+                    node.is_folder = true;
+                }
+
+                data.push(node);
+            });
+
+            return data;
+        }
+
+        function getChildrenOfNode(node_id) {
+            var result = null;
+
+            function iterate(nodes) {
+                $.each(nodes, function() {
+                    if (result) {
+                        return;
+                    }
+                    else {
+                        if (this.id == node_id) {
+                            result = this;
+                        }
+
+                        if (this.children) {
+                            iterate(this.children);
+                        }
+                    }
+                });
+            }
+
+            iterate(example_data);
+
+            return getFirstLevelData(result.children);
+        }
+
+        $(function() {
             var $tree = $('#tree1');
             $tree.tree({
-                data: data
+                data: getFirstLevelData(example_data)
             });
             $tree.bind('tree.before_open', function(e) {
                 var node = e.node;
 
                 if (! node.hasChildren()) {
-                    $tree.tree('loadData', ['aaa', 'bbb', 'ccc'], node);
+                    var data = getChildrenOfNode(node.id);
+                    $tree.tree('loadData', data, node);
                 }
             }); 
         });
