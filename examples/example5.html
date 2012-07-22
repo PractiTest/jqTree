@@ -22,7 +22,7 @@
         <a href="example4.html">&laquo; Example 4</a>
     </p>
 
-    <h1>Example 5 - Load on demand</h1>
+    <h1>Example 5 - Load nodes on demand from the server</h1>
 
     <div id="tree1"></div>
 
@@ -31,38 +31,96 @@
     </p>
 
     <h3>html</h3>
+
+    <p>
+        In this example, the <strong>/nodes/</strong> url must return data for the first level of nodes.
+    </p>
+
 <pre>
-&lt;div id="tree1"&gt;&lt;/div&gt;
+&lt;div id="tree1" data-url="/nodes/"&gt;&lt;/div&gt;
+</pre>
+
+    <p>
+        One detail: as this is the first level of data, the nodes have no <strong>children</strong> property. To indicate that these nodes are folders, the property <strong>is_folder</strong> is set to true:
+    </p>
+
+<pre>
+{
+  "label": "Saurischia",
+  "id": 1,
+  "is_folder": true
+}
 </pre>
 
     <h3>javascript</h3>
+
+    <p>
+        When the user opens a folder, its children are loaded from the server. This is done in the <strong>tree.before_open</strong> event.  This event gives you the opportunity to delay the opening of the folder.
+    </p>
+
 <pre>
 var $tree = $('#tree1');
-$tree.tree({
-    data: ExampleData.getFirstLevelData()
-});
-$tree.bind('tree.before_open', function(e) {
-    var node = e.node;
 
-    if (! node.hasChildren()) {
-        var data = ExampleData.getChildrenOfNode(node.id);
-        $tree.tree('loadData', data, node);
-    }
+$tree.tree();
+
+$tree.bind('tree.before_open', function(e) {
+  var node = e.node;
+
+  // This node is folder. But does it have children? If not, load them.
+  if (! node.hasChildren()) {
+    var $folder = $(e.node.element);
+    $folder.addClass('loading');
+
+    $.getJSON(
+        '/nodes/' + node.id,
+        function(data) {
+          $folder.removeClass('loading');
+
+          // Load the data
+          $tree.tree('loadData', data, node);
+
+          // Open the folder
+          e.do_open();
+        }
+    );
+
+    // Delay the opening of the folder
+    e.preventDefault();
 });
 </pre>
 
     <script>
         $(function() {
             var $tree = $('#tree1');
+
+            // We cannot use a real server in this example. So, simulate loading the data from 'data-url'.
+            // Todo: can we simulate this using mockjax, including the delay?
             $tree.tree({
                 data: ExampleData.getFirstLevelData()
             });
             $tree.bind('tree.before_open', function(e) {
                 var node = e.node;
 
+                // This node is folder. But does it have children? If not, load them.
                 if (! node.hasChildren()) {
-                    var data = ExampleData.getChildrenOfNode(node.id);
-                    $tree.tree('loadData', data, node);
+                    var $folder = $(e.node.element);
+                    $folder.addClass('loading');
+
+                    // Again, no real server here. Simulate loading the data by ajax.
+                    function getData() {
+                        $folder.removeClass('loading');
+
+                        var data = ExampleData.getChildrenOfNode(node.id);
+                        $tree.tree('loadData', data, node);
+
+                        // Open the folder
+                        e.do_open();
+                    }
+
+                    setTimeout(getData, 1000);
+
+                    // Delay the opening of the folder
+                    e.preventDefault();
                 }
             }); 
         });
