@@ -545,10 +545,18 @@ class JqTreeWidget extends MouseWidget
         @_refreshElements(parent_node)
         return node
 
+    getStateFromStorage: ->
+        return @save_state_handler.getStateFromStorage()
+
     _init: ->
         super()
 
         @element = @$el
+        @selected_node = null
+
+        @save_state_handler = new SaveStateHandler(this)
+        @select_node_handler = new SelectNodeHandler(this)
+        @dnd_handler = new DragAndDropHandler(this)
 
         @_initData()
 
@@ -583,12 +591,6 @@ class JqTreeWidget extends MouseWidget
     _initTree: (data) ->
         @tree = new Tree()
         @tree.loadFromData(data)
-
-        @selected_node = null
-
-        @save_state_handler = new SaveStateHandler(this)
-        @select_node_handler = new SelectNodeHandler(this)
-        @dnd_handler = new DragAndDropHandler(this)
 
         @_openNodes()
         @_refreshElements()
@@ -971,25 +973,28 @@ class SaveStateHandler
             )
 
     restoreState: ->
+        state = @getStateFromStorage()
+
+        if state
+            @setState(state)
+            return true
+        else
+            return false
+
+    getStateFromStorage: ->
         if @tree_widget.options.onGetStateFromStorage
-            state = @tree_widget.options.onGetStateFromStorage()
+            return @tree_widget.options.onGetStateFromStorage()
         else if localStorage?
-            state = localStorage.getItem(
+            return localStorage.getItem(
                 @getCookieName()
             )
         else if $.cookie
-            state = $.cookie(
+            return $.cookie(
                 @getCookieName(),
                 {path: '/'}
             )
         else
-            state = null
-
-        if not state
-            return false
-        else
-            @setState(state)
-            return true
+            return null
 
     getState: ->
         open_nodes = []
